@@ -32,7 +32,16 @@ const char *ManyMouse_DeviceName(unsigned int index);
 int ManyMouse_PollEvent(ManyMouseEvent *event);
 ]]
 
-local mmlib = ffi.load("./libmanymouse.so")
+local os = love.system.getOS()
+local mmlib = (function()
+    if os == "Windows" then
+        return ffi.load("./libmanymouse.dll")
+    elseif os == "OS X" or os == "Linux" then
+        return ffi.load("./libmanymouse.so")
+    else
+        error("Not supported on mobile devices!", 2)
+    end
+end)()
 
 ManyMouse = {}
 
@@ -211,6 +220,9 @@ function MouseManager:_callEventListeners(ev)
         f(event)
     end
     ]]--
+
+    -- make sure the device field obeys Lua indexing instead of C's
+    ev.device = ev.device + 1
     for _, f in ipairs(self.eventListeners) do
         f(ev)
     end
